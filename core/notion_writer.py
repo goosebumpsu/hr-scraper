@@ -177,6 +177,25 @@ class NotionWriter:
     def __init__(self) -> None:
         self._client = Client(auth=NOTION_TOKEN)
 
+    def url_exists(self, url: str) -> bool:
+        """Notion DB에 동일한 URL의 페이지가 이미 있으면 True."""
+        import requests as _requests
+        resp = _requests.post(
+            f"https://api.notion.com/v1/databases/{NOTION_DATABASE_ID}/query",
+            headers={
+                "Authorization": f"Bearer {NOTION_TOKEN}",
+                "Notion-Version": "2022-06-28",
+                "Content-Type": "application/json",
+            },
+            json={
+                "filter": {"property": "URL", "url": {"equals": url}},
+                "page_size": 1,
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+        return len(resp.json().get("results", [])) > 0
+
     def create_page(
         self,
         article: Article,

@@ -127,9 +127,16 @@ def run() -> None:
     if summary is None:
         logger.warning("요약 실패 - 본문 원문으로 Notion 저장 진행")
 
-    # 5) Notion 저장
+    # 5) Notion 중복 체크 + 저장
     try:
         writer = NotionWriter()
+        if writer.url_exists(target.url):
+            logger.warning("이미 Notion에 존재하는 URL - 건너뜀: %s", target.url)
+            processed.add(target.url)
+            _save_processed(processed)
+            state["current_index"] = (current_index + 1) % len(SITES)
+            _save_state(state)
+            return
         page_id = writer.create_page(target, summary)
         logger.info("Notion 저장 완료: %s", page_id)
     except Exception as e:
