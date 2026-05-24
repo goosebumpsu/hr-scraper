@@ -13,16 +13,18 @@ from scrapers.base import Article
 logger = logging.getLogger(__name__)
 
 
-def _post(payload: dict) -> None:
-    """Slack Webhook으로 메시지를 전송한다. 실패해도 예외를 올리지 않는다."""
-    if not SLACK_WEBHOOK_URL:
+def _post(payload: dict) -> bool:
+    """Slack Webhook으로 메시지를 전송한다. 성공 여부를 반환하고 예외는 올리지 않는다."""
+    if not SLACK_WEBHOOK_URL or SLACK_WEBHOOK_URL.endswith("..."):
         logger.debug("SLACK_WEBHOOK_URL 미설정 - 알림 건너뜀")
-        return
+        return False
     try:
         resp = requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=10)
         resp.raise_for_status()
+        return True
     except Exception as e:
         logger.warning("Slack 알림 전송 실패 (무시): %s", e)
+        return False
 
 
 def notify_success(
@@ -73,8 +75,10 @@ def notify_success(
             },
         ]
     }
-    _post(payload)
-    logger.info("Slack 알림 전송 완료")
+    if _post(payload):
+        logger.info("Slack 알림 전송 완료")
+    else:
+        logger.debug("Slack 알림 건너뜀 (URL 미설정)")
 
 
 def notify_error(site_name: str, error: str) -> None:
