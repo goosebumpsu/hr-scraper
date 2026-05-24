@@ -8,6 +8,8 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # state.json 커밋 push에 필요
 
     steps:
       - uses: actions/checkout@v4
