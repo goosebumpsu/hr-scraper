@@ -1,5 +1,5 @@
 """
-HR 아티클 스크래퍼 오케스트레이터 (Phase 1)
+HR 아티클 스크래퍼 오케스트레이터
 실행당 1건 수집 - 라운드로빈 Waterfall 방식
 """
 from __future__ import annotations
@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from config import PROCESSED_FILE, SITES, STATE_FILE
+from core.notifier import notify_error, notify_success
 from core.notion_writer import NotionWriter
 from core.summarizer import Summarizer
 from scrapers.base import BaseScraper
@@ -90,7 +91,7 @@ def run() -> None:
         articles = scraper.get_latest_articles()
     except Exception as e:
         logger.error("목록 수집 실패 [%s]: %s", site.name, e)
-        # 다음 사이트로 넘기지 않고 종료 (이번 실행 실패로 처리)
+        notify_error(site.name, str(e))
         sys.exit(1)
 
     # 2) 처리되지 않은 첫 번째 아티클 선택
@@ -113,7 +114,7 @@ def run() -> None:
         target = scraper.parse_article(target.url)
     except Exception as e:
         logger.error("아티클 파싱 실패: %s", e)
-        # 파싱 실패 URL도 processed에 등록해 무한 재시도 방지
+        notify_error(site.name, str(e))
         processed.add(target.url)
         _save_processed(processed)
         state["current_index"] = (current_index + 1) % len(SITES)
@@ -133,9 +134,13 @@ def run() -> None:
         logger.info("Notion 저장 완료: %s", page_id)
     except Exception as e:
         logger.error("Notion 저장 실패: %s", e)
+        notify_error(site.name, str(e))
         sys.exit(1)
 
-    # 6) 상태 업데이트
+    # 6) Slack 알림
+    notify_success(target, summary, page_id)
+
+    # 7) 상태 업데이트
     processed.add(target.url)
     _save_processed(processed)
     state["current_index"] = (current_index + 1) % len(SITES)
