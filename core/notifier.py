@@ -27,6 +27,13 @@ def _post(payload: dict) -> bool:
         return False
 
 
+_SOURCE_EMOJI = {
+    "에이치닷": "🏢",
+    "그리팅": "👋",
+    "레몬베이스": "🍋",
+}
+
+
 def notify_success(
     article: Article,
     summary: Optional[ArticleSummary],
@@ -35,6 +42,7 @@ def notify_success(
     """아티클 저장 성공 알림."""
     notion_url = f"https://www.notion.so/{page_id.replace('-', '')}"
     one_line = summary.one_line_summary if summary else "(요약 없음 - 원문 저장)"
+    source_emoji = _SOURCE_EMOJI.get(article.source, "📄")
 
     payload = {
         "blocks": [
@@ -42,33 +50,33 @@ def notify_success(
                 "type": "header",
                 "text": {
                     "type": "plain_text",
-                    "text": "HR 아티클 저장 완료",
+                    "text": "✅ HR 아티클 저장 완료",
                     "emoji": True,
                 },
             },
             {
                 "type": "section",
                 "fields": [
-                    {"type": "mrkdwn", "text": f"*제목*\n{article.title}"},
-                    {"type": "mrkdwn", "text": f"*출처*\n{article.source}"},
+                    {"type": "mrkdwn", "text": f"🌟 *제목*\n{article.title}"},
+                    {"type": "mrkdwn", "text": f"❓ *출처*\n{article.source}"},
                 ],
             },
             {
                 "type": "section",
-                "text": {"type": "mrkdwn", "text": f"*한줄 요약*\n{one_line}"},
+                "text": {"type": "mrkdwn", "text": f"💡 *한줄 요약*\n{one_line}"},
             },
             {
                 "type": "actions",
                 "elements": [
                     {
                         "type": "button",
-                        "text": {"type": "plain_text", "text": "Notion에서 보기"},
+                        "text": {"type": "plain_text", "text": "📝 Notion에서 보기", "emoji": True},
                         "url": notion_url,
                         "style": "primary",
                     },
                     {
                         "type": "button",
-                        "text": {"type": "plain_text", "text": "원문 보기"},
+                        "text": {"type": "plain_text", "text": "🔗 원문 보기", "emoji": True},
                         "url": article.url,
                     },
                 ],
@@ -89,7 +97,7 @@ def notify_error(site_name: str, error: str) -> None:
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f":warning: *HR 스크래퍼 오류* [{site_name}]\n```{error[:300]}```",
+                    "text": f"🚨 *HR 스크래퍼 오류* [{site_name}]\n```{error[:300]}```",
                 },
             }
         ]
