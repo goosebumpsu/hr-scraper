@@ -5,7 +5,7 @@ from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 
-from config import MAX_ARTICLES_PER_FETCH, REQUEST_HEADERS, REQUEST_TIMEOUT
+from config import ARTICLE_MIN_DATE, MAX_ARTICLES_PER_FETCH, REQUEST_HEADERS, REQUEST_TIMEOUT
 from scrapers.base import Article, BaseScraper
 
 _BASE = "https://lemonbase.com"
@@ -34,11 +34,19 @@ class LemonbaseScraper(BaseScraper):
         data = self._next_data(self.base_url)
         posts: list[dict] = data.get("props", {}).get("pageProps", {}).get("posts", [])
 
-        # '아티클' 또는 '뉴스레터' 태그가 포함된 포스트만 추출
-        filtered = [
-            p for p in posts
-            if any(t.get("name") in _INCLUDE_TAGS for t in p.get("tags", []))
-        ]
+        # '아티클' 또는 '뉴스레터' 태그이면서 ARTICLE_MIN_DATE 이후 발행된 포스트만 추출
+        filtered = []
+        for p in posts:
+            has_tag = any(t.get("name") in _INCLUDE_TAGS for t in p.get("tags", []))
+            if not has_tag:
+                continue
+            try:
+                pub_date = datetime.fromisoformat(p.get("published_at", "")).date()
+            except Exception:
+                pub_date = None
+            if pub_date and pub_date < ARTICLE_MIN_DATE:
+                continue
+            filtered.append(p)
 
         articles = []
         for post in filtered[:MAX_ARTICLES_PER_FETCH]:

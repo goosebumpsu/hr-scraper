@@ -10,7 +10,7 @@ import logging
 import sys
 from pathlib import Path
 
-from config import PROCESSED_FILE, SITES, STATE_FILE
+from config import ARTICLE_MIN_DATE, PROCESSED_FILE, SITES, STATE_FILE
 from core.notifier import notify_error, notify_success
 from core.notion_writer import NotionWriter
 from core.summarizer import Summarizer
@@ -121,13 +121,24 @@ def run() -> None:
         _save_state(state)
         sys.exit(1)
 
-    # 4) Claude 요약
+    # 4) 날짜 기준 체크 (ARTICLE_MIN_DATE 이전 아티클 건너뜀)
+    if target.published_date and target.published_date < ARTICLE_MIN_DATE:
+        logger.info(
+            "날짜 기준 미달 - 건너뜀: %s (%s)", target.title[:40], target.published_date
+        )
+        processed.add(target.url)
+        _save_processed(processed)
+        state["current_index"] = (current_index + 1) % len(SITES)
+        _save_state(state)
+        return
+
+    # 5) Claude 요약
     summarizer = Summarizer()
     summary = summarizer.summarize(target)
     if summary is None:
         logger.warning("요약 실패 - 본문 원문으로 Notion 저장 진행")
 
-    # 5) Notion 중복 체크 + 저장
+    # 6) Notion 중복 체크 + 저장
     try:
         writer = NotionWriter()
         if writer.url_exists(target.url):
@@ -144,10 +155,10 @@ def run() -> None:
         notify_error(site.name, str(e))
         sys.exit(1)
 
-    # 6) Slack 알림
+    # 7) Slack 알림
     notify_success(target, summary, page_id)
 
-    # 7) 상태 업데이트
+    # 8) 상태 업데이트
     processed.add(target.url)
     _save_processed(processed)
     state["current_index"] = (current_index + 1) % len(SITES)

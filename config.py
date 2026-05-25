@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -39,6 +40,7 @@ PROCESSED_FILE = "data/processed.json"
 
 # 스크래퍼 설정
 MAX_ARTICLES_PER_FETCH = 10
+ARTICLE_MIN_DATE = date(2025, 1, 1)   # 이 날짜 이전 아티클은 수집하지 않음
 REQUEST_TIMEOUT = 15          # seconds
 REQUEST_HEADERS = {
     "User-Agent": (
