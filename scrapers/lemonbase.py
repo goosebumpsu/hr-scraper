@@ -9,7 +9,7 @@ from config import MAX_ARTICLES_PER_FETCH, REQUEST_HEADERS, REQUEST_TIMEOUT
 from scrapers.base import Article, BaseScraper
 
 _BASE = "https://lemonbase.com"
-_ARTICLE_TAG = "아티클"
+_INCLUDE_TAGS = {"아티클", "뉴스레터"}
 
 
 class LemonbaseScraper(BaseScraper):
@@ -34,10 +34,10 @@ class LemonbaseScraper(BaseScraper):
         data = self._next_data(self.base_url)
         posts: list[dict] = data.get("props", {}).get("pageProps", {}).get("posts", [])
 
-        # '아티클' 태그가 포함된 포스트만 추출
+        # '아티클' 또는 '뉴스레터' 태그가 포함된 포스트만 추출
         filtered = [
             p for p in posts
-            if any(t.get("name") == _ARTICLE_TAG for t in p.get("tags", []))
+            if any(t.get("name") in _INCLUDE_TAGS for t in p.get("tags", []))
         ]
 
         articles = []
