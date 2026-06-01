@@ -20,7 +20,7 @@ SITES: list[SiteConfig] = [
     SiteConfig(
         name="에이치닷",
         base_url="https://contents.h.place/article",
-        scraper_module="scrapers.heydot",
+        scraper_module="scrapers.hdot",
     ),
     SiteConfig(
         name="그리팅",
