@@ -76,9 +76,11 @@ class GreetingScraper(BaseScraper):
                 except Exception:
                     pass
 
-        # 태그 (없으면 빈 리스트)
+        # 태그 (사이트에 없으면 기본값 "아티클")
         tag_els = soup.select(".post-tags a, .post-full-tags a")
         tags = [t.get_text(strip=True) for t in tag_els if t.get_text(strip=True)]
+        if not tags:
+            tags = ["아티클"]
 
         # 본문
         body_el = soup.select_one("div.post-content")
